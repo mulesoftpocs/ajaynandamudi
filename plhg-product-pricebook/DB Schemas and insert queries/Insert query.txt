@@ -1,0 +1,24 @@
+INSERT INTO `project`.`products`
+(`Id`,
+`Name`,
+`PartDescription`,
+`ProductCode`,
+`PartNumber`,
+`ItemType`,
+`ReplaceWith`,
+`ShippingWeight`,
+`ShippingWeightUnits`,
+`IsActive`,
+`LastModifiedDate`)
+VALUES
+("",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+CURRENT_TIMESTAMP);
