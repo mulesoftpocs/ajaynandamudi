@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="27700753-1b54-4448-8749-ce6a7ae0bc5a" >
+		<file:connection workingDir="C:\Filemodule" />
+	</file:config>
+	<flow name="foreachscopeFlow" doc:id="6d6e1f2f-3ef9-40bd-9050-a6f4a00165d4" >
+		<file:listener doc:name="accounts.csv" doc:id="c41abb89-f658-4adb-a84b-dcc38369c070" config-ref="File_Config" directory="input" moveToDirectory="output">
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+			<file:matcher filenamePattern="*.csv"/>
+		</file:listener>
+		<ee:transform doc:name="Transform Message" doc:id="7cfda261-0862-4663-ab03-3413edcf7218" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="3607d705-83d6-4d15-bc7e-3b12d94915ab" >
+			<set-payload value="processed" doc:name="processed" doc:id="6cac8035-9ab9-4036-946e-c49e8558194e" />
+			<logger level="INFO" doc:name="payload" doc:id="9ee6fff3-1799-41e4-98b6-e30f8f86099c" message="#[payload]"/>
+		</foreach>
+		<logger level="INFO" doc:name="payload" doc:id="3f171752-c1ef-47c0-bbd4-5398905efdbd" message="#[payload]"/>
+	</flow>
+</mule>
