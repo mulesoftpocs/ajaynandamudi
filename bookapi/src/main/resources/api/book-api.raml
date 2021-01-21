@@ -1,0 +1,62 @@
+#%RAML 1.0
+baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/af4e3163-d338-4f07-b8b1-f20b9ec0a14d/ # 
+title: Book api
+version: 1.0
+
+/book:
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              [{"BookTitle":"Data Science","Author":"James","YCP":"2005","Cost":4000},{"BookTitle":"Hadoop Guide","Author":"Joseph","YCP":"2008","Cost":"3000"}]
+  post:
+    body:
+      application/json:
+        example:
+          {"BookTitle":"Hadoop Guide","Author":"Joseph","YCP":"2008","Cost":"3000"}
+    responses:
+      202:
+        body:
+          application/json:
+            example:
+              {"message":"Book added successfully (Not Really)"}
+  /{bookTitle}:
+    get:
+      queryParameters:
+        Year:
+          displayName: YOP
+          description: Year of publication
+          example: 2O1O
+          required: true
+          type: string
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                {"BookTitle":"Hadoop Guide","Author":"Joseph","YCP":"2008","Cost":"3000"}
+  /author:
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                [{"author":"Jacky","No.of Books":2},{"author":"jitu","No.of Books":10}]
+    post:
+      body:
+        application/json:
+          example:
+            {"author":"Jacky","No.of books":2}
+      responses:
+        202:
+          body:
+            application/json:
+              example:
+                {"message":"Author added successfully (Not Really)"}
+                
+                
+        
+            
