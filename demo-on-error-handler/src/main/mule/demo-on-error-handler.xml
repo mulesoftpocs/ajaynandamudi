@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="e23e6a8c-cbc8-4da0-aefa-4cc917dbab02" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="dcf988f4-3ffd-4c5d-b258-8423b75b87f9" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="Miracle@1" database="employee" />
+	</db:config>
+	<sub-flow name="fetch-emp_details-sub-flow" doc:id="425187f5-6af7-47f7-a384-d43b4932940f" >
+		<try doc:name="Try" doc:id="a8e22185-1285-4314-a6a4-574aeed6a5a8" >
+			<logger level="INFO" doc:name="Logger" doc:id="b60db6e7-c567-4f7d-94df-580e50784e4d" message="start before db call" />
+			<db:select doc:name="Select" doc:id="bf3c45b6-0b5f-4e40-8bcd-05fe6e7de621" config-ref="Database_Config">
+			<db:sql>select * from emp_details where emp_id=:emp_id</db:sql>
+			<db:input-parameters><![CDATA[#[{
+	emp_id: attributes.queryParams.fetch
+}]]]></db:input-parameters>
+		</db:select>
+			<logger level="INFO" doc:name="Logger" doc:id="0f5aaf6f-934c-4033-a42f-e437c362bd94" message="end before db call" />
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="1823901e-5496-4e1c-acb6-76efcb5f909c" type="ANY">
+					<logger level="INFO" doc:name="Logger" doc:id="5210892d-664f-42b6-828d-ab0230b98757" message="db error occured"/>
+				</on-error-continue>
+			</error-handler>
+		</try>
+	</sub-flow>
+	<flow name="demo-on-error-handlerFlow" doc:id="151bc1a1-4e57-473c-a0ab-19270a8c5405" >
+		<http:listener doc:name="Listener" doc:id="40d34db0-5b65-4aaa-bbc2-49947a4f971e" path="/test" config-ref="HTTP_Listener_config">
+			<http:error-response statusCode="#[vars.statusCode]" reasonPhrase="#[vars.reasonPhrase]" >
+				<http:body ><![CDATA[#[payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<validation:is-number numberType="INTEGER" doc:name="Is number" doc:id="4c1f390f-24fe-4d75-a51b-e7f362c24a05" value="#[attributes.queryParams.fetch]" message="emp_id is not an integer"/>
+		<flow-ref doc:name="Flow Reference" doc:id="b0306323-8704-4b3c-9b33-32c7bfa5c83d" name="fetch-emp_details-sub-flow" />
+		<choice doc:name="Choice" doc:id="70a8b76e-357f-46ba-8dfb-aa6773d8887a" >
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<ee:transform doc:name="Transform Message" doc:id="1d9d898e-5d66-431f-84bf-bcc2d0dffb4f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{ 
+	"emp_name": payload[0].emp_name,
+	"emp_id": payload[0].emp_id,
+	"emp_status": payload[0].emp_status
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<raise-error doc:name="Raise error" doc:id="00d7d06c-5df0-4ba7-a57a-c89a4570eb90" type="EMP:EMP_DETAILS_NOT_FOUND"/>
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="af5dbaff-5798-4620-8605-a810c745de8b" type="VALIDATION:INVALID_NUMBER">
+				<ee:transform doc:name="Transform Message" doc:id="c3b22883-9637-4cdb-b4d4-e45bef88c66f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"status": 400,
+	"message": error.description
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="statusCode" ><![CDATA[400]]></ee:set-variable>
+						<ee:set-variable variableName="reasonPhrase" ><![CDATA["Bad request"]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="3d365b3a-2676-45b5-a186-58e0d74a2fa5" type="EMP:EMP_DETAILS_NOT_FOUND">
+				<ee:transform doc:name="Transform Message" doc:id="3db71d8a-27f4-402a-970f-f0795a6a875b" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"status": 400401,
+	'message': "emp_data_not_found"
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="statusCode" ><![CDATA[400401]]></ee:set-variable>
+						<ee:set-variable variableName="reasonPhrase" ><![CDATA["emp_data_not_found"]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5e672fd4-058c-4add-9daf-a67324fcc02a" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="4fec71aa-b711-4f6e-a3e6-d9bdda2c6d5f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"status": 500,
+	"message":"server error"
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="statusCode" ><![CDATA[500]]></ee:set-variable>
+						<ee:set-variable variableName="reasonPhrase" ><![CDATA["server error"]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			
+		</error-handler>
+	</flow>
+</mule>
