@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="45947a00-77d7-4574-be54-33d0380a7902" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="Miracle@1" database="users" />
+	</db:config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="a1fe2055-f4fc-4e5d-b861-04d6b6cfc345" >
+		<file:connection workingDir="C:\Filemodule" />
+	</file:config>
+	<flow name="demoonwatermarkingFlow" doc:id="41870c02-d6c8-4c92-89d1-81f584c2ed97" >
+		<db:listener table="users" doc:name="On Table Row" doc:id="9d80d4e5-7a4d-4ab4-894f-a875d59c0e63" config-ref="Database_Config" watermarkColumn="email" idColumn="email">
+			<scheduling-strategy >
+				<fixed-frequency frequency="5" startDelay="3" timeUnit="SECONDS" />
+			</scheduling-strategy>
+		</db:listener>
+		<ee:transform doc:name="Transform Message" doc:id="13ccc631-2a94-4316-a6b6-e4c787c59890" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv header=false
+---
+[payload]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="Write" doc:id="2e4fff84-718a-403f-9143-a370df68ade7" config-ref="File_Config" path="input\account.csv" mode="APPEND"/>
+	</flow>
+</mule>
